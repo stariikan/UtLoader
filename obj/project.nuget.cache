@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "dgSpecHash": "Rgr2GkfnbjI=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Amemo\\source\\repos\\UtLoader\\UtLoader\\UtLoader.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Amemo\\.nuget\\packages\\microsoft-windowsapicodepack-core\\1.1.5\\microsoft-windowsapicodepack-core.1.1.5.nupkg.sha512",
+    "C:\\Users\\Amemo\\.nuget\\packages\\microsoft-windowsapicodepack-shell\\1.1.5\\microsoft-windowsapicodepack-shell.1.1.5.nupkg.sha512",
+    "C:\\Users\\Amemo\\.nuget\\packages\\windowsapicodepack-core\\1.1.1\\windowsapicodepack-core.1.1.1.nupkg.sha512",
+    "C:\\Users\\Amemo\\.nuget\\packages\\windowsapicodepack-shell\\1.1.1\\windowsapicodepack-shell.1.1.1.nupkg.sha512",
+    "C:\\Users\\Amemo\\.nuget\\packages\\windowsapicodepack-shellextensions\\1.1.1\\windowsapicodepack-shellextensions.1.1.1.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'WindowsAPICodePack-Core 1.1.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\Amemo\\source\\repos\\UtLoader\\UtLoader\\UtLoader.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\Amemo\\source\\repos\\UtLoader\\UtLoader\\UtLoader.csproj",
+      "libraryId": "WindowsAPICodePack-Core",
+      "targetGraphs": [
+        "net8.0-windows7.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'WindowsAPICodePack-Shell 1.1.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\Amemo\\source\\repos\\UtLoader\\UtLoader\\UtLoader.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\Amemo\\source\\repos\\UtLoader\\UtLoader\\UtLoader.csproj",
+      "libraryId": "WindowsAPICodePack-Shell",
+      "targetGraphs": [
+        "net8.0-windows7.0"
+      ]
+    },
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "message": "Package 'WindowsAPICodePack-ShellExtensions 1.1.1' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0-windows7.0'. This package may not be fully compatible with your project.",
+      "projectPath": "C:\\Users\\Amemo\\source\\repos\\UtLoader\\UtLoader\\UtLoader.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\Amemo\\source\\repos\\UtLoader\\UtLoader\\UtLoader.csproj",
+      "libraryId": "WindowsAPICodePack-ShellExtensions",
+      "targetGraphs": [
+        "net8.0-windows7.0"
+      ]
+    }
+  ]
+}
