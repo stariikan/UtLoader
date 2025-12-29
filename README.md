@@ -1,6 +1,5 @@
 UtLoader
-A fast, modern YouTube downloader for Windows built with WPF + MVVM.
-UtLoader is a lightweight desktop application that wraps yt‑dlp and ffmpeg inside a clean, responsive WPF interface.
+UtLoader is a lightweight desktop application that wraps yt‑dlp and ffmpeg inside a responsive WPF interface.
 It provides real‑time progress, MP3/MP4 output, post‑processing status, and a smooth user experience powered by a custom download pipeline.
 
 🚀 Features
@@ -13,28 +12,22 @@ It provides real‑time progress, MP3/MP4 output, post‑processing status, and 
 - Live progress percentage
 - File size updates
 - File name detection
-- Status messages:
-- Downloading…
-- Extracting audio…
-- Merging…
-- Converting…
-- Finishing…
+- Status messages
   
 🧠 Smart Behavior
 - Playlist detection with user confirmation
 - Automatic MP3 extraction
 - Automatic MP4 merging
-- Error handling with clear messages
+- Error handling with messages
 - Non‑blocking UI (async/await)
   
-🧱 Clean Architecture
+🧱 Architecture
 - Full MVVM pattern
 - DownloadService handles:
 - yt‑dlp execution
 - ffmpeg conversion
 - output parsing
 - progress callbacks
-- UI stays responsive and clean
 
 🏗️ How It Works
 1. User enters a YouTube URL
@@ -62,16 +55,7 @@ Depending on the format:
 - Optional conversion if the downloaded file is not MP4
 
 🧩 Architecture Overview
-WPF UI (XAML)
-     │
-     ▼
-MainViewModel  ←— Commands, Bindings, Status Updates
-     │
-     ▼
-DownloadService  ←— yt-dlp + ffmpeg execution
-     │
-     ▼
-Process Output Parsing  ←— Regex, state detection
+WPF UI (XAML) > MainViewModel (Commands, Bindings, Status Updates) > DownloadService (yt-dlp + ffmpeg execution) > Process Output Parsing (Regex, state detection).
 
 📦 Requirements
 Place these executables in the same folder as the app:
