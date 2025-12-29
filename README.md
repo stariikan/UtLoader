@@ -84,3 +84,5 @@ Place these executables in the same folder as the app:
 - Open the solution in Visual Studio
 - Restore NuGet packages
 - Build and run
+
+by Murat Khabriev.
