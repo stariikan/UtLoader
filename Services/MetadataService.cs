@@ -4,7 +4,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace UtLoader.Services
-
 {
     public class VideoMetadata
     {
@@ -21,7 +20,7 @@ namespace UtLoader.Services
             var psi = new ProcessStartInfo
             {
                 FileName = YtDlpExe,
-                Arguments = $"-J {url}",   // JSON metadata
+                Arguments = $"-J \"{url}\"",   // JSON metadata
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -54,6 +53,54 @@ namespace UtLoader.Services
             catch
             {
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Triggers yt-dlp's native update mechanism and returns a status message.
+        /// </summary>
+        public async Task<string> UpdateYtDlpAsync()
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = YtDlpExe,
+                Arguments = "-U", // The command to self-update
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            try
+            {
+                using var proc = new Process { StartInfo = psi };
+                proc.Start();
+
+                string output = await proc.StandardOutput.ReadToEndAsync();
+                string error = await proc.StandardError.ReadToEndAsync();
+                await proc.WaitForExitAsync();
+
+                // Combine output and error streams as yt-dlp sometimes writes update info to stderr
+                string fullOutput = $"{output}\n{error}".ToLower();
+
+                if (fullOutput.Contains("is up to date"))
+                {
+                    return "yt-dlp is already up to date.";
+                }
+                else if (fullOutput.Contains("updated yt-dlp to version"))
+                {
+                    return "yt-dlp updated successfully!";
+                }
+                else if (fullOutput.Contains("error"))
+                {
+                    return "Failed to update yt-dlp. Check your internet connection or file permissions.";
+                }
+
+                return "Update check completed (Unknown status).";
+            }
+            catch (Exception ex)
+            {
+                return $"Error checking for updates: {ex.Message}";
             }
         }
     }
