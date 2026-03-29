@@ -3,15 +3,15 @@ UtLoader is a smart, lightweight desktop application built with WPF and .NET. It
 
 ✨ Key Features
 🎵 Three-Tier Downloading:
-- MP3: Audio-only extraction with automatic ID3 metadata and thumbnail embedding.
-- MP4: Standard video with audio, automatically merged via ffmpeg.
-- Native (Fastest): Grabs the raw, highest-quality format directly from the source to skip conversion time.
+1. MP3: Audio-only extraction with automatic ID3 metadata and thumbnail embedding.
+2. MP4: Standard video with audio, automatically merged via ffmpeg.
+3. Native (Fastest): Grabs the raw, highest-quality format directly from the source to skip conversion time.
 
-🗂️ Smart Playlist Management: Automatically detects playlist URLs and launches a custom selection window, allowing you to check or uncheck specific tracks before downloading.
-🤖 Zero-Setup Dependencies: No more hunting for executable files. If yt-dlp, ffmpeg, or ffprobe are missing, UtLoader automatically fetches and extracts the latest official versions in the background on launch.
-🔄 Self-Updating Engine: Silently checks the official repositories to ensure yt-dlp is always on the latest release before you start downloading.
-💾 Persistent Settings: Automatically saves your preferred output folder and format choices so you don't have to reconfigure them every time you open the app.
-🧹 Graceful Interruption & Cleanup: Non-blocking UI allows you to stop downloads instantly, automatically sweeping up any leftover .part or .ytdl junk files left behind by aborted processes.
+- 🗂️ Smart Playlist Management: Automatically detects playlist URLs and launches a custom selection window, allowing you to check or uncheck specific tracks before downloading.
+- 🤖 Zero-Setup Dependencies: No more hunting for executable files. If yt-dlp, ffmpeg, or ffprobe are missing, UtLoader automatically fetches and extracts the latest official versions in the background on launch.
+- 🔄 Self-Updating Engine: Silently checks the official repositories to ensure yt-dlp is always on the latest release before you start downloading.
+- 💾 Persistent Settings: Automatically saves your preferred output folder and format choices so you don't have to reconfigure them every time you open the app.
+- 🧹 Graceful Interruption & Cleanup: Non-blocking UI allows you to stop downloads instantly, automatically sweeping up any leftover .part or .ytdl junk files left behind by aborted processes.
 
 📊 Real-Time UI Feedback
 - Live progress percentage and dynamic status messages (e.g., "Downloading...", "Extracting audio...", "Merging...").
