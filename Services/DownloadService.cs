@@ -1,14 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Linq;
 
 namespace UtLoader.Services
 {
+    // 1. New class to hold playlist item data for the UI
+    public class PlaylistItem
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Url { get; set; } = string.Empty;
+        public bool IsSelected { get; set; } = true; // Checked by default
+    }
+
     public class DownloadService
     {
         private Process? _process;
@@ -17,7 +25,8 @@ namespace UtLoader.Services
         public async Task DownloadAsync(
             string url,
             string outputFolder,
-            string targetFormat, // Changed from bool isMp3 to accept "Mp3", "Mp4", or "Native"
+            string targetFormat,
+            List<string>? selectedUrls, // 2. New parameter for specific videos
             Action<double, string, string> progressCallback)
         {
             // Validate tools
@@ -39,42 +48,39 @@ namespace UtLoader.Services
                 throw new Exception($"ERR_OUTPUT_FOLDER: Output folder does not exist: {outputFolder}");
 
             _currentOutputFolder = outputFolder;
-            // Fix template (CRITICAL)
+
+            // Fix template
             string template = Path.GetFullPath(outputFolder)
                 .Replace("\\", "/") + "/%(title)s.%(ext)s";
-
-            // Playlist detection
-            bool downloadPlaylist = false;
-            if (await IsPlaylistAsync(url))
-            {
-                var result = MessageBox.Show(
-                    "This URL is a playlist. Do you want to download all videos?",
-                    "Playlist detected",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                downloadPlaylist = result == MessageBoxResult.Yes;
-            }
 
             bool isMp3 = targetFormat.Equals("Mp3", StringComparison.OrdinalIgnoreCase);
             bool isNative = targetFormat.Equals("Native", StringComparison.OrdinalIgnoreCase);
 
             // Build yt-dlp args
-            string args;
+            string args = "";
 
             if (isMp3)
             {
-                // Added --embed-metadata and --embed-thumbnail from our earlier upgrade
-                args = downloadPlaylist
-                    ? $"-x --audio-format mp3 --audio-quality 0 --embed-metadata --embed-thumbnail -o \"{template}\" \"{url}\""
-                    : $"-x --audio-format mp3 --audio-quality 0 --embed-metadata --embed-thumbnail --no-playlist -o \"{template}\" \"{url}\"";
+                args = $"-x --audio-format mp3 --audio-quality 0 --embed-metadata --embed-thumbnail -o \"{template}\"";
             }
             else
             {
-                // Both MP4 and Native will use the best video + best audio flags initially
-                args = downloadPlaylist
-                    ? $"-f \"bv*+ba/b\" -o \"{template}\" \"{url}\""
-                    : $"-f \"bv*+ba/b\" --no-playlist -o \"{template}\" \"{url}\"";
+                args = $"-f \"bv*+ba/b\" -o \"{template}\"";
+            }
+
+            // 3. Handle Batch Downloading vs Single URL
+            string? batchFilePath = null;
+            if (selectedUrls != null && selectedUrls.Any())
+            {
+                // Write the selected URLs to a text file for yt-dlp to read
+                batchFilePath = Path.Combine(outputFolder, "batch_temp.txt");
+                File.WriteAllLines(batchFilePath, selectedUrls);
+                args += $" -a \"{batchFilePath}\"";
+            }
+            else
+            {
+                // Single video download or full playlist download
+                args += $" \"{url}\"";
             }
 
             // Start yt-dlp
@@ -87,7 +93,6 @@ namespace UtLoader.Services
             };
 
             _process = new Process { StartInfo = psi };
-
             bool ytdlpError = false;
 
             _process.OutputDataReceived += (s, e) =>
@@ -125,18 +130,21 @@ namespace UtLoader.Services
             _process.BeginErrorReadLine();
             await _process.WaitForExitAsync();
 
+            // Cleanup batch file if we created one
+            if (batchFilePath != null && File.Exists(batchFilePath))
+            {
+                try { File.Delete(batchFilePath); } catch { }
+            }
+
             if (ytdlpError)
                 throw new Exception("ERR_YTDLP_FAILED: yt-dlp reported an error. Check URL or network.");
 
-            // If it's MP3, yt-dlp handled the audio extraction already.
-            // If it's Native, we want whatever format yt-dlp gave us, so we stop here.
             if (isMp3 || isNative)
                 return;
 
             // -------------------------------------------------------------
-            // Everything below this line is strictly for MP4 conversion
+            // MP4 conversion logic
             // -------------------------------------------------------------
-
             string? downloadedFile = FindLatestDownloadedFile(outputFolder);
             if (downloadedFile == null)
                 throw new Exception("ERR_NO_FILE_CREATED: yt-dlp finished but no output file was found.");
@@ -146,15 +154,6 @@ namespace UtLoader.Services
             if (ext == ".mp4")
                 return;
 
-            var convertResult = MessageBox.Show(
-                $"The downloaded video is in format {ext.ToUpper().Trim('.')}. Convert to MP4?",
-                "Convert to MP4?",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (convertResult == MessageBoxResult.No)
-                return;
-
             string outputMp4 = Path.ChangeExtension(downloadedFile, ".mp4");
             await ConvertToMp4(downloadedFile, outputMp4, progressCallback);
 
@@ -162,17 +161,66 @@ namespace UtLoader.Services
             {
                 File.Delete(downloadedFile);
             }
+            catch { }
+        }
+
+        // 4. New method to fetch all items in a playlist
+        public async Task<List<PlaylistItem>> GetPlaylistItemsAsync(string url)
+        {
+            var playlistItems = new List<PlaylistItem>();
+            string ytDlpPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "yt-dlp.exe");
+
+            var psi = new ProcessStartInfo(ytDlpPath, $"--flat-playlist --dump-single-json \"{url}\"")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var proc = new Process { StartInfo = psi };
+            proc.Start();
+            string output = await proc.StandardOutput.ReadToEndAsync();
+            await proc.WaitForExitAsync();
+
+            if (string.IsNullOrWhiteSpace(output)) return playlistItems;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(output);
+                if (doc.RootElement.TryGetProperty("entries", out var entries))
+                {
+                    foreach (var entry in entries.EnumerateArray())
+                    {
+                        string title = entry.TryGetProperty("title", out var t) ? t.GetString() ?? "Unknown Title" : "Unknown Title";
+                        string id = entry.TryGetProperty("id", out var i) ? i.GetString() ?? "" : "";
+                        string videoUrl = entry.TryGetProperty("url", out var u) ? u.GetString() ?? $"https://www.youtube.com/watch?v={id}" : $"https://www.youtube.com/watch?v={id}";
+
+                        // Ignore private/deleted videos which often have no title or a specific placeholder
+                        if (!string.IsNullOrEmpty(id) && title != "[Private video]" && title != "[Deleted video]")
+                        {
+                            playlistItems.Add(new PlaylistItem
+                            {
+                                Title = title,
+                                Url = videoUrl,
+                                IsSelected = true
+                            });
+                        }
+                    }
+                }
+            }
             catch
             {
-                // Not critical
+                // Fallback to returning empty list if JSON parsing fails
             }
+
+            return playlistItems;
         }
 
         private string? FindLatestDownloadedFile(string folder)
         {
             var files = Directory.GetFiles(folder);
-            if (files.Length == 0)
-                return null;
+            if (files.Length == 0) return null;
 
             return new DirectoryInfo(folder)
                 .GetFiles()
@@ -232,9 +280,7 @@ namespace UtLoader.Services
             {
                 if (e.Data != null)
                 {
-                    if (e.Data.Contains("Error"))
-                        ffmpegError = true;
-
+                    if (e.Data.Contains("Error")) ffmpegError = true;
                     ParseFfmpegProgress(e.Data, progressCallback, duration);
                 }
             };
@@ -243,9 +289,7 @@ namespace UtLoader.Services
             {
                 if (e.Data != null)
                 {
-                    if (e.Data.Contains("Error"))
-                        ffmpegError = true;
-
+                    if (e.Data.Contains("Error")) ffmpegError = true;
                     ParseFfmpegProgress(e.Data, progressCallback, duration);
                 }
             };
@@ -265,8 +309,7 @@ namespace UtLoader.Services
             Action<double, string, string> progressCallback,
             double durationSeconds)
         {
-            if (string.IsNullOrWhiteSpace(line))
-                return;
+            if (string.IsNullOrWhiteSpace(line)) return;
 
             if (line.StartsWith("out_time="))
             {
@@ -276,7 +319,6 @@ namespace UtLoader.Services
                 {
                     double percent = (ts.TotalSeconds / durationSeconds) * 100.0;
                     if (percent > 100) percent = 100;
-
                     progressCallback(percent, "Converting...", "");
                 }
             }
@@ -284,36 +326,6 @@ namespace UtLoader.Services
             if (line.Contains("progress=end"))
             {
                 progressCallback(100, "Conversion complete", "");
-            }
-        }
-
-        private async Task<bool> IsPlaylistAsync(string url)
-        {
-            string ytDlpPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "yt-dlp.exe");
-
-            var psi = new ProcessStartInfo(ytDlpPath, $"--flat-playlist --dump-single-json \"{url}\"")
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var proc = new Process { StartInfo = psi };
-            proc.Start();
-            string output = await proc.StandardOutput.ReadToEndAsync();
-            await proc.WaitForExitAsync();
-
-            if (string.IsNullOrWhiteSpace(output)) return false;
-
-            try
-            {
-                using var doc = JsonDocument.Parse(output);
-                return doc.RootElement.TryGetProperty("entries", out _);
-            }
-            catch
-            {
-                return false;
             }
         }
 
@@ -366,26 +378,19 @@ namespace UtLoader.Services
 
         public void Stop()
         {
-            // 1. Kill the active process
             if (_process != null && !_process.HasExited)
             {
                 _process.Kill(true);
             }
 
-            // 2. Clean up partial files left behind
             if (!string.IsNullOrEmpty(_currentOutputFolder) && Directory.Exists(_currentOutputFolder))
             {
-                // Run this on a background task so Thread.Sleep doesn't freeze the UI
                 Task.Run(() =>
                 {
                     try
                     {
-                        // Give the OS a tiny moment to release file locks after killing the process
                         System.Threading.Thread.Sleep(500);
-
                         var directory = new DirectoryInfo(_currentOutputFolder);
-
-                        // yt-dlp usually leaves behind .part or .ytdl files
                         var partialFiles = directory.GetFiles("*.*")
                             .Where(f => f.Extension.Equals(".part", StringComparison.OrdinalIgnoreCase) ||
                                         f.Extension.Equals(".ytdl", StringComparison.OrdinalIgnoreCase));
@@ -395,11 +400,7 @@ namespace UtLoader.Services
                             file.Delete();
                         }
                     }
-                    catch
-                    {
-                        // If a file is stubbornly locked by the OS, ignore it.
-                        // We don't want a cleanup failure to crash the app.
-                    }
+                    catch { }
                 });
             }
         }
