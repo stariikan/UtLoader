@@ -1,73 +1,46 @@
-UtLoader
-Google drive: https://drive.google.com/file/d/1KArqikJiZL2MxOW4x72Vr8qEVdsDALy5/view?usp=sharing
-UtLoader is a lightweight desktop application that wraps yt‑dlp and ffmpeg inside a responsive WPF interface.
-It provides real‑time progress, MP3/MP4 output, post‑processing status, and a smooth user experience powered by a custom download pipeline.
+🚀 UtLoader
+UtLoader is a smart, lightweight desktop application built with WPF and .NET. It acts as a powerful, user-friendly wrapper for yt-dlp and ffmpeg, providing real-time progress, batch playlist downloading, and automatic dependency management inside a modern interface.
 
-🚀 Features
-🎧 Audio & Video Downloads
-- Download MP3 (audio‑only)
-- Download MP4 (video + audio)
-- Automatic post‑processing using ffmpeg
-  
-📊 Real‑Time UI Feedback
-- Live progress percentage
-- File size updates
-- File name detection
-- Status messages
-  
-🧠 Smart Behavior
-- Playlist detection with user confirmation
-- Automatic MP3 extraction
-- Automatic MP4 merging
-- Error handling with messages
-- Non‑blocking UI (async/await)
-  
-🧱 Architecture
-- Full MVVM pattern
-- DownloadService handles:
-- yt‑dlp execution
-- ffmpeg conversion
-- output parsing
-- progress callbacks
+✨ Key Features
+🎵 Three-Tier Downloading:
+- MP3: Audio-only extraction with automatic ID3 metadata and thumbnail embedding.
+- MP4: Standard video with audio, automatically merged via ffmpeg.
+- Native (Fastest): Grabs the raw, highest-quality format directly from the source to skip conversion time.
 
-🏗️ How It Works
-1. User enters a YouTube URL
-The ViewModel validates input and enables the Download button.
+🗂️ Smart Playlist Management: Automatically detects playlist URLs and launches a custom selection window, allowing you to check or uncheck specific tracks before downloading.
+🤖 Zero-Setup Dependencies: No more hunting for executable files. If yt-dlp, ffmpeg, or ffprobe are missing, UtLoader automatically fetches and extracts the latest official versions in the background on launch.
+🔄 Self-Updating Engine: Silently checks the official repositories to ensure yt-dlp is always on the latest release before you start downloading.
+💾 Persistent Settings: Automatically saves your preferred output folder and format choices so you don't have to reconfigure them every time you open the app.
+🧹 Graceful Interruption & Cleanup: Non-blocking UI allows you to stop downloads instantly, automatically sweeping up any leftover .part or .ytdl junk files left behind by aborted processes.
 
-3. DownloadService launches yt‑dlp
-- Standard output and error streams are parsed in real time
-- Regex extracts:
-- percentage
-- file size
-- file name
-- extraction/merging steps
-
-3. UI updates live
-The ViewModel receives callbacks and updates:
-- Progress
-- FileName
-- FileSize
-- Status
-
-4. Post‑processing
-Depending on the format:
-- MP3 → audio extraction
-- MP4 → merging video + audio
-- Optional conversion if the downloaded file is not MP4
+📊 Real-Time UI Feedback
+- Live progress percentage and dynamic status messages (e.g., "Downloading...", "Extracting audio...", "Merging...").
+- Real-time file size updates and file name detection.
+- Responsive Grid UI with a dedicated status dashboard.
 
 🧩 Architecture Overview
-WPF UI (XAML) > MainViewModel (Commands, Bindings, Status Updates) > DownloadService (yt-dlp + ffmpeg execution) > Process Output Parsing (Regex, state detection).
+UtLoader follows a strict MVVM (Model-View-ViewModel) pattern for clean separation of concerns:
+- WPF UI (XAML): Modern, responsive Grid layout with native .NET 8 folder dialogs.
+- MainViewModel: Manages data binding, command execution, and thread-safe UI updates (Dispatcher.Invoke).
+- DownloadService: Orchestrates yt-dlp execution, stream parsing (Regex), batch file creation, and ffmpeg conversions.
+- DependencyService: Handles the HTTP downloads and zip extraction for missing external executables.
+- SettingsService: Reads and writes user preferences to a local settings.json.
+- MetadataService: Manages playlist parsing and background yt-dlp version updates.
 
-📦 Requirements
-Place these executables in the same folder as the app:
-- yt-dlp.exe
-- ffmpeg.exe
-- ffprobe.exe
+📦 Installation & Usage
+Because UtLoader is compiled as a Single-File Executable, installation is incredibly simple:
 
-🔧 Build Instructions
-- Clone the repository
-- Open the solution in Visual Studio
-- Restore NuGet packages
-- Build and run
+1. Download UtLoader.exe: https://drive.google.com/file/d/1KArqikJiZL2MxOW4x72Vr8qEVdsDALy5/view?usp=sharing
+2. Place it in any folder you like.
+3. Run it.
+
+(The application will automatically download yt-dlp.exe and ffmpeg into the same folder the first time you run it!)
+
+🔧 Build Instructions (For Developers)
+1. Clone the repository.
+2. Open the solution in Visual Studio.
+3. Restore NuGet packages.
+4. Ensure the Publish Profile is set to Framework-Dependent with <PublishSingleFile> and <IncludeNativeLibrariesForSelfExtract> enabled in the .csproj.
+5. Build and run.
 
 by Murat Khabriev.
