@@ -6,9 +6,19 @@ namespace UtLoader.ViewModels
     {
         private readonly MediaItem _model;
 
+        // ADDED: UI state for the CheckBox in the playlist window
+        private bool _isSelected = true;
+
         public MediaItemViewModel(MediaItem model)
         {
             _model = model;
+        }
+
+        // ADDED: The property the XAML CheckBox will bind to
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set { _isSelected = value; OnPropertyChanged(); }
         }
 
         public string Url { get => _model.Url; set { _model.Url = value; OnPropertyChanged(); } }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -9,12 +10,31 @@ using System.Threading.Tasks;
 
 namespace UtLoader.Services
 {
-    // 1. New class to hold playlist item data for the UI
-    public class PlaylistItem
+    // 1. Upgraded to support live UI updates via INotifyPropertyChanged
+    public class PlaylistItem : INotifyPropertyChanged
     {
+        private bool _isSelected = true;
+        private string _status = "Waiting...";
+
         public string Title { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
-        public bool IsSelected { get; set; } = true; // Checked by default
+
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set { _isSelected = value; OnPropertyChanged(nameof(IsSelected)); }
+        }
+
+        // New property so the UI can show exactly what is happening to this specific track
+        public string Status
+        {
+            get => _status;
+            set { _status = value; OnPropertyChanged(nameof(Status)); }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged(string name) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 
     public class DownloadService
@@ -22,11 +42,11 @@ namespace UtLoader.Services
         private Process? _process;
         private string? _currentOutputFolder;
 
+        // 2. Reverted to a single URL. The ViewModel will handle the batching loop.
         public async Task DownloadAsync(
             string url,
             string outputFolder,
             string targetFormat,
-            List<string>? selectedUrls, // 2. New parameter for specific videos
             Action<double, string, string> progressCallback)
         {
             // Validate tools
@@ -56,31 +76,16 @@ namespace UtLoader.Services
             bool isMp3 = targetFormat.Equals("Mp3", StringComparison.OrdinalIgnoreCase);
             bool isNative = targetFormat.Equals("Native", StringComparison.OrdinalIgnoreCase);
 
-            // Build yt-dlp args
+            // Build yt-dlp args (No more batch.txt logic!)
             string args = "";
 
             if (isMp3)
             {
-                args = $"-x --audio-format mp3 --audio-quality 0 --embed-metadata --embed-thumbnail -o \"{template}\"";
+                args = $"-x --audio-format mp3 --audio-quality 0 --embed-metadata --embed-thumbnail -o \"{template}\" \"{url}\"";
             }
             else
             {
-                args = $"-f \"bv*+ba/b\" -o \"{template}\"";
-            }
-
-            // 3. Handle Batch Downloading vs Single URL
-            string? batchFilePath = null;
-            if (selectedUrls != null && selectedUrls.Any())
-            {
-                // Write the selected URLs to a text file for yt-dlp to read
-                batchFilePath = Path.Combine(outputFolder, "batch_temp.txt");
-                File.WriteAllLines(batchFilePath, selectedUrls);
-                args += $" -a \"{batchFilePath}\"";
-            }
-            else
-            {
-                // Single video download or full playlist download
-                args += $" \"{url}\"";
+                args = $"-f \"bv*+ba/b\" -o \"{template}\" \"{url}\"";
             }
 
             // Start yt-dlp
@@ -130,12 +135,6 @@ namespace UtLoader.Services
             _process.BeginErrorReadLine();
             await _process.WaitForExitAsync();
 
-            // Cleanup batch file if we created one
-            if (batchFilePath != null && File.Exists(batchFilePath))
-            {
-                try { File.Delete(batchFilePath); } catch { }
-            }
-
             if (ytdlpError)
                 throw new Exception("ERR_YTDLP_FAILED: yt-dlp reported an error. Check URL or network.");
 
@@ -164,7 +163,7 @@ namespace UtLoader.Services
             catch { }
         }
 
-        // 4. New method to fetch all items in a playlist
+        // 4. Fetch all items in a playlist
         public async Task<List<PlaylistItem>> GetPlaylistItemsAsync(string url)
         {
             var playlistItems = new List<PlaylistItem>();
@@ -203,7 +202,8 @@ namespace UtLoader.Services
                             {
                                 Title = title,
                                 Url = videoUrl,
-                                IsSelected = true
+                                IsSelected = true,
+                                Status = "Waiting..." // Initialize the new status
                             });
                         }
                     }
