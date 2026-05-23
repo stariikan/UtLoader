@@ -81,13 +81,12 @@ namespace UtLoader.Services
 
             if (isMp3)
             {
-                args = $"-x --audio-format mp3 --audio-quality 0 --embed-metadata --embed-thumbnail -o \"{template}\" \"{url}\"";
+                args = $"--no-playlist -x --audio-format mp3 --audio-quality 0 --embed-metadata --embed-thumbnail -o \"{template}\" \"{url}\"";
             }
             else
             {
-                args = $"-f \"bv*+ba/b\" -o \"{template}\" \"{url}\"";
+                args = $"--no-playlist -f \"bv*+ba/b\" -o \"{template}\" \"{url}\"";
             }
-
             // Start yt-dlp
             var psi = new ProcessStartInfo(ytDlpPath, args)
             {
